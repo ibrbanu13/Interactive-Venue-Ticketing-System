@@ -1,0 +1,151 @@
+:root {
+  --orchestra: #c75b4e;
+  --side: #5fa2d8;
+  --balcony: #8e54d4;
+
+  --orchestra-inspected: #ab1c0f;
+  --side-inspected: #0d69b0;
+  --balcony-inspected: #6025b8;
+
+  --in-cart: #2a9d4a;
+  --unavailable: #9a9a9a;
+  --inspect: #ffd400;
+  --ink: #1d1d1f;
+  --panel: #f5f3effa;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: system-ui, sans-serif;
+  color: var(--ink);
+  background: #fff;
+}
+
+.site-header { padding: 1rem 1.5rem; }
+.site-header h1 { margin: 0; }
+.site-header p { margin: .25rem 0 0; }
+
+/* ---------- Page layout ---------- */
+.layout {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: 1rem;
+  padding: 0 1.5rem 1.5rem;
+}
+
+/* ---------- Legend ---------- */
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .5rem 1rem;
+  list-style: none;
+  padding: 0;
+  margin: 0 0 .75rem;
+}
+.legend-box {
+  display: inline-block;
+  width: 14px; height: 14px;
+  border-radius: 4px;
+  vertical-align: middle;
+}
+.cat-orchestra { background: var(--orchestra); }
+.cat-side { background: var(--side); }
+.cat-balcony { background: var(--balcony); }
+.state-in-cart { background: var(--in-cart); }
+.state-unavailable { background: var(--unavailable); }
+
+/* ---------- Controls ---------- */
+.controls { display: flex; flex-wrap: wrap; gap: .4rem; margin-bottom: .75rem; }
+.controls button { padding: .4rem .7rem; font-size: 1rem; cursor: pointer; }
+
+/* ---------- Viewport + map ---------- */
+#viewport {
+  height: 70vh;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  overflow: auto;
+  background: #fafafa;
+}
+#map {
+  width: max-content;
+  min-width: 100%;
+  padding: 2rem;
+  transform-origin: 0 0;
+}
+
+.stage {
+  width: 50%;
+  margin: 0 auto 2rem;
+  padding: 1rem;
+  text-align: center;
+  color: #fff;
+  background: #333;
+  border-radius: 0 0 50% 50% / 0 0 40% 40%;
+}
+
+#hall {
+  display: grid;
+  grid-template-columns: auto auto auto;
+  justify-content: center;
+  grid-template-areas:
+    "left    center  right"
+    "balcony balcony balcony";
+  gap: 2rem;
+}
+#zone-left    { grid-area: left; }
+#zone-center  { grid-area: center; }
+#zone-right   { grid-area: right; }
+#zone-balcony { grid-area: balcony; }
+
+/* ---------- Zones and seats ---------- */
+.zone {
+  display: grid;
+  grid-template-columns: repeat(var(--cols), 28px);
+  gap: 4px;
+  justify-content: center;
+  align-content: start;
+}
+.zone.cat-orchestra { --seat-color: var(--orchestra); --seat-inspected: var(--orchestra-inspected); background: none; }
+.zone.cat-side      { --seat-color: var(--side);      --seat-inspected: var(--side-inspected);      background: none; }
+.zone.cat-balcony   { --seat-color: var(--balcony);   --seat-inspected: var(--balcony-inspected);   background: none; }
+
+.seat {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: none;
+  border-radius: 6px 6px 2px 2px;
+  background: var(--seat-color);
+  cursor: pointer;
+}
+.seat:hover { filter: brightness(1.15); }
+.seat:focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; }
+
+
+.seat.in-cart     { background: var(--in-cart); }
+.seat.unavailable { background: var(--unavailable); cursor: not-allowed; }
+.seat.inspected   { outline: 3px solid var(--inspect); background: var(--seat-inspected); transform: scale(1.1); }
+
+/* ---------- Side panels ---------- */
+.side { display: flex; flex-direction: column; gap: 1rem; }
+.panel { background: var(--panel); border-radius: 8px; padding: 1rem; }
+.panel h2 { margin: 0 0 .5rem; font-size: 1.1rem; }
+.empty { color: #666; margin: 0; }
+
+#details dl { margin: 0 0 .75rem; display: grid; grid-template-columns: auto 1fr; gap: .25rem .75rem; }
+#details dt { color: #666; }
+#details dd { margin: 0; font-weight: 600; }
+
+#addBtn { width: 100%; padding: .6rem; font-size: 1rem; cursor: pointer; }
+#addBtn:disabled { cursor: not-allowed; opacity: .5; }
+
+#cartList { list-style: none; margin: 0; padding: 0; }
+.total { margin: .75rem 0; }
+
+/* ---------- Responsive ---------- */
+@media (max-width: 800px) {
+  .layout { grid-template-columns: 1fr; padding: 0 1rem 1rem; }
+  #viewport { height: 55vh; }
+}
