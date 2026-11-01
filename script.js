@@ -14,9 +14,14 @@ const sections = [
 // zoneId-row-seat
 const unavailable = new Set(["center-1-4", "center-1-5", "center-2-7", "left-3-2", "balcony-2-9"]); 
 
+const STORAGE_KEY = "theatre-cart";
+
 const state = {
   inspected: null,
   cart: [],
+  scale: 1,   // zoom level
+  x: 0,       // pan offsets in px
+  y: 0,
 };
 
 /* ---------- Venue Generation ---------- */
@@ -49,6 +54,53 @@ function parseSeat(id) {
   return { section, row: Number(row), seat: Number(seat) };
 }
 
+function isRealSeat(id) {
+  if (typeof id !== "string") return false;
+  const { section, row, seat } = parseSeat(id);
+  return Boolean(section) &&
+    Number.isInteger(row) && row >= 1 && row <= section.rows &&
+    Number.isInteger(seat) && seat >= 1 && seat <= section.seats;
+}
+
+function saveCart() {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state.cart));
+  } catch (err) {
+    console.warn("Could not save the cart:", err);
+  }
+}
+ 
+function loadCart() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
+    if (!Array.isArray(saved)) return;
+    state.cart = [...new Set(saved)].filter(id => isRealSeat(id) && !unavailable.has(id));
+    saveCart();
+  } catch (err) {
+    state.cart = [];
+  }
+}
+ 
+function addToCart() {
+  const id = state.inspected;
+  if (!id || unavailable.has(id) || state.cart.includes(id)) return;
+  state.cart.push(id);
+  saveCart();
+  render();
+}
+ 
+function removeFromCart(id) {
+  state.cart = state.cart.filter(item => item !== id);
+  saveCart();
+  render();
+}
+ 
+function clearCart() {
+  state.cart = [];
+  saveCart();
+  render();
+}
+
 /* ---------- Render ---------- */
 
 function renderSeats() {
@@ -63,17 +115,19 @@ function renderSeats() {
 function renderDetails() {
   const box = document.querySelector("#details");
   const addBtn = document.querySelector("#addBtn");
-
+ 
   if (!state.inspected) {
     box.innerHTML = '<p class="empty">No seat selected. Click a seat on the map.</p>';
+    addBtn.disabled = true;
+    addBtn.textContent = "Add to cart";
     return;
   }
-
+ 
   const { section, row, seat } = parseSeat(state.inspected);
   const isUnavailable = unavailable.has(state.inspected);
   const inCart = state.cart.includes(state.inspected);
   const status = isUnavailable ? "Unavailable" : inCart ? "In cart" : "Available";
-
+ 
   box.innerHTML = `
     <dl>
       <dt>Section</dt><dd>${section.name}</dd>
@@ -82,22 +136,66 @@ function renderDetails() {
       <dt>Price</dt><dd>$${section.price}</dd>
       <dt>Status</dt><dd>${status}</dd>
     </dl>`;
+ 
+  addBtn.disabled = isUnavailable || inCart;
+  addBtn.textContent = inCart ? "Already in cart" : "Add to cart";
 }
+
+
+function renderCart() {
+  const list = document.querySelector("#cartList");
+  list.innerHTML = "";
+ 
+  let total = 0;
+  state.cart.forEach(id => {
+    const { section, row, seat } = parseSeat(id);
+    total += section.price;
+ 
+    const li = document.createElement("li");
+    li.innerHTML = `
+      <span class="item-info">
+        <strong>${section.name}</strong>
+        <span>Row ${row}, Seat ${seat}</span>
+        <span class="item-price">$${section.price}</span>
+      </span>`;
+ 
+    const remove = document.createElement("button");
+    remove.type = "button";
+    remove.className = "remove-btn";
+    remove.dataset.id = id;
+    remove.textContent = "Remove";
+    remove.setAttribute("aria-label", `Remove ${section.name}, row ${row}, seat ${seat}`);
+    li.append(remove);
+    list.append(li);
+  });
+ 
+  document.querySelector("#cartEmpty").hidden = state.cart.length > 0;
+  document.querySelector("#total").textContent = `$${total}`;
+  document.querySelector("#clearBtn").disabled = state.cart.length === 0;
+} 
 
 function render() {
   renderSeats();
   renderDetails();
+  renderCart();
 }
 
 /* ---------- Events ---------- */
 
-  document.querySelector("#map").addEventListener("click", e => {
+map.addEventListener("click", e => {
   const seat = e.target.closest(".seat");
-  if (!seat) return;
+  if (!seat || seat.disabled) return;
   state.inspected = seat.dataset.id;
   render();
 });
-
+ 
+document.querySelector("#addBtn").addEventListener("click", addToCart);
+document.querySelector("#clearBtn").addEventListener("click", clearCart);
+document.querySelector("#cartList").addEventListener("click", e => {
+  const btn = e.target.closest(".remove-btn");
+  if (btn) removeFromCart(btn.dataset.id);
+});
 
 buildVenue();
+loadCart();
 render();
