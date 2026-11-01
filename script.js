@@ -101,6 +101,58 @@ function clearCart() {
   render();
 }
 
+
+ 
+const ZOOM_STEP = 0.2;
+const MIN_SCALE = 0.4;
+const MAX_SCALE = 2.5;
+const PAN_STEP = 80;
+const KEEP_VISIBLE = 120;
+ 
+const viewport = document.querySelector("#viewport");
+const map = document.querySelector("#map");
+
+const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
+ 
+function clampPan() {
+  const vw = viewport.clientWidth;
+  const vh = viewport.clientHeight;
+  const mw = map.offsetWidth * state.scale;
+  const mh = map.offsetHeight * state.scale;
+  state.x = clamp(state.x, KEEP_VISIBLE - mw, vw - KEEP_VISIBLE);
+  state.y = clamp(state.y, KEEP_VISIBLE - mh, vh - KEEP_VISIBLE);
+}
+ 
+function applyView() {
+  clampPan();
+  map.style.transform = `translate(${state.x}px, ${state.y}px) scale(${state.scale})`;
+}
+ 
+function zoomBy(delta) {
+  const next = clamp(+(state.scale + delta).toFixed(2), MIN_SCALE, MAX_SCALE);
+  const ratio = next / state.scale;
+  const cx = viewport.clientWidth / 2;
+  const cy = viewport.clientHeight / 2;
+  state.x = cx - (cx - state.x) * ratio;
+  state.y = cy - (cy - state.y) * ratio;
+  state.scale = next;
+  applyView();
+}
+ 
+function panBy(dx, dy) {
+  state.x += dx;
+  state.y += dy;
+  applyView();
+}
+ 
+function resetView() {
+  state.scale = 1;
+  state.x = (viewport.clientWidth - map.offsetWidth) / 2;
+  state.y = 0;
+  applyView();
+}
+
+
 /* ---------- Render ---------- */
 
 function renderSeats() {
@@ -196,6 +248,18 @@ document.querySelector("#cartList").addEventListener("click", e => {
   if (btn) removeFromCart(btn.dataset.id);
 });
 
+
+document.querySelector("#zoomIn").addEventListener("click",    () => zoomBy(ZOOM_STEP));
+document.querySelector("#zoomOut").addEventListener("click",   () => zoomBy(-ZOOM_STEP));
+document.querySelector("#moveUp").addEventListener("click",    () => panBy(0, PAN_STEP));
+document.querySelector("#moveDown").addEventListener("click",  () => panBy(0, -PAN_STEP));
+document.querySelector("#moveLeft").addEventListener("click",  () => panBy(PAN_STEP, 0));
+document.querySelector("#moveRight").addEventListener("click", () => panBy(-PAN_STEP, 0));
+document.querySelector("#resetView").addEventListener("click", resetView);
+ 
+window.addEventListener("resize", applyView);
+
 buildVenue();
 loadCart();
 render();
+resetView();
