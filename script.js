@@ -104,7 +104,7 @@ function clearCart() {
 
  
 const ZOOM_STEP = 0.2;
-const MIN_SCALE = 0.4;
+const MIN_SCALE = 0.25;
 const MAX_SCALE = 2.5;
 const PAN_STEP = 80;
 const KEEP_VISIBLE = 120;
