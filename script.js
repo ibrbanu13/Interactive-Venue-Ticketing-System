@@ -146,9 +146,12 @@ function panBy(dx, dy) {
 }
  
 function resetView() {
-  state.scale = 1;
-  state.x = (viewport.clientWidth - map.offsetWidth) / 2;
-  state.y = 0;
+  const vw = viewport.clientWidth;
+  const vh = viewport.clientHeight;
+  const fit = Math.min(vw / map.offsetWidth, vh / map.offsetHeight, 1);
+  state.scale = clamp(Math.floor(fit * 100) / 100, MIN_SCALE, 1);
+  state.x = (vw - map.offsetWidth * state.scale) / 2;
+  state.y = (vh - map.offsetHeight * state.scale) / 2;
   applyView();
 }
 
