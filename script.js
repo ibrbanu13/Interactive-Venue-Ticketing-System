@@ -73,7 +73,7 @@ function saveCart() {
 function loadCart() {
   try {
     const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
-    if (!Array.isArray(saved)) return;
+    if (!Array.isArray(saved)) { state.cart = []; return; }
     state.cart = [...new Set(saved)].filter(id => isRealSeat(id) && !unavailable.has(id));
     saveCart();
   } catch (err) {
@@ -111,6 +111,8 @@ const KEEP_VISIBLE = 120;
  
 const viewport = document.querySelector("#viewport");
 const map = document.querySelector("#map");
+const zoomInBtn = document.querySelector("#zoomIn");
+const zoomOutBtn = document.querySelector("#zoomOut");
 
 const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
  
@@ -126,6 +128,8 @@ function clampPan() {
 function applyView() {
   clampPan();
   map.style.transform = `translate(${state.x}px, ${state.y}px) scale(${state.scale})`;
+  zoomInBtn.disabled = state.scale >= MAX_SCALE;
+  zoomOutBtn.disabled = state.scale <= MIN_SCALE;
 }
  
 function zoomBy(delta) {
@@ -261,6 +265,12 @@ document.querySelector("#moveRight").addEventListener("click", () => panBy(-PAN_
 document.querySelector("#resetView").addEventListener("click", resetView);
  
 window.addEventListener("resize", applyView);
+
+window.addEventListener("storage", e => {
+  if (e.key !== STORAGE_KEY) return;
+  loadCart();
+  render();
+});
 
 buildVenue();
 loadCart();
