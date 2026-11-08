@@ -132,7 +132,7 @@ function applyView() {
   zoomInBtn.disabled = state.scale >= MAX_SCALE;
   zoomOutBtn.disabled = state.scale <= MIN_SCALE;
 }
- 
+
 function zoomAt(cx, cy, delta) {
   const next = clamp(+(state.scale + delta).toFixed(2), MIN_SCALE, MAX_SCALE);
   const ratio = next / state.scale;
@@ -280,12 +280,57 @@ window.addEventListener("storage", e => {
 
 // Mouse wheel: zoom toward the cursor
 viewport.addEventListener("wheel", e => {
-  e.preventDefault();
+  e.preventDefault();   // do not scroll the page while zooming the map
   const rect = viewport.getBoundingClientRect();
   const cx = e.clientX - rect.left - viewport.clientLeft;
   const cy = e.clientY - rect.top - viewport.clientTop;
   zoomAt(cx, cy, e.deltaY < 0 ? WHEEL_STEP : -WHEEL_STEP);
 }, { passive: false });
+
+
+// Click and drag: pan the map
+const DRAG_THRESHOLD = 5;   // px the pointer must move before a click becomes a drag
+let drag = null;
+let justDragged = false;
+
+viewport.addEventListener("pointerdown", e => {
+  if (e.button !== 0) return;   // left button only
+  drag = { id: e.pointerId, startX: e.clientX, startY: e.clientY,
+           originX: state.x, originY: state.y, moved: false };
+});
+
+viewport.addEventListener("pointermove", e => {
+  if (!drag || e.pointerId !== drag.id) return;
+  const dx = e.clientX - drag.startX;
+  const dy = e.clientY - drag.startY;
+
+  if (!drag.moved) {
+    if (Math.hypot(dx, dy) < DRAG_THRESHOLD) return;
+    drag.moved = true;
+    viewport.setPointerCapture(e.pointerId);
+    viewport.classList.add("dragging");
+  }
+  state.x = drag.originX + dx;
+  state.y = drag.originY + dy;
+  applyView();
+});
+
+function endDrag(e) {
+  if (!drag || e.pointerId !== drag.id) return;
+  if (drag.moved) {
+    justDragged = true;
+    setTimeout(() => { justDragged = false; }, 0);
+  }
+  viewport.classList.remove("dragging");
+  drag = null;
+}
+viewport.addEventListener("pointerup", endDrag);
+viewport.addEventListener("pointercancel", endDrag);
+
+viewport.addEventListener("click", e => {
+  if (justDragged) { e.stopPropagation(); e.preventDefault(); }
+}, true);
+
 
 buildVenue();
 loadCart();
