@@ -108,6 +108,7 @@ const MIN_SCALE = 0.25;
 const MAX_SCALE = 2.5;
 const PAN_STEP = 80;
 const KEEP_VISIBLE = 120;
+const WHEEL_STEP = 0.1;
  
 const viewport = document.querySelector("#viewport");
 const map = document.querySelector("#map");
@@ -132,15 +133,17 @@ function applyView() {
   zoomOutBtn.disabled = state.scale <= MIN_SCALE;
 }
  
-function zoomBy(delta) {
+function zoomAt(cx, cy, delta) {
   const next = clamp(+(state.scale + delta).toFixed(2), MIN_SCALE, MAX_SCALE);
   const ratio = next / state.scale;
-  const cx = viewport.clientWidth / 2;
-  const cy = viewport.clientHeight / 2;
   state.x = cx - (cx - state.x) * ratio;
   state.y = cy - (cy - state.y) * ratio;
   state.scale = next;
   applyView();
+}
+
+function zoomBy(delta) {
+  zoomAt(viewport.clientWidth / 2, viewport.clientHeight / 2, delta);
 }
  
 function panBy(dx, dy) {
@@ -263,7 +266,7 @@ document.querySelector("#moveDown").addEventListener("click",  () => panBy(0, -P
 document.querySelector("#moveLeft").addEventListener("click",  () => panBy(PAN_STEP, 0));
 document.querySelector("#moveRight").addEventListener("click", () => panBy(-PAN_STEP, 0));
 document.querySelector("#resetView").addEventListener("click", resetView);
- 
+
 window.addEventListener("resize", applyView);
 
 window.addEventListener("storage", e => {
@@ -271,6 +274,18 @@ window.addEventListener("storage", e => {
   loadCart();
   render();
 });
+
+
+/* ---------- Mouse navigation (bonus) ---------- */
+
+// Mouse wheel: zoom toward the cursor
+viewport.addEventListener("wheel", e => {
+  e.preventDefault();
+  const rect = viewport.getBoundingClientRect();
+  const cx = e.clientX - rect.left - viewport.clientLeft;
+  const cy = e.clientY - rect.top - viewport.clientTop;
+  zoomAt(cx, cy, e.deltaY < 0 ? WHEEL_STEP : -WHEEL_STEP);
+}, { passive: false });
 
 buildVenue();
 loadCart();
