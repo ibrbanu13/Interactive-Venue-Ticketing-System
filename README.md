@@ -1,1 +1,0 @@
-# Interactive-Venue-Ticketing-System
